@@ -2,6 +2,7 @@ import cv2
 import numpy as np;
 from enum import Enum
 import math
+from scipy import stats
 from matplotlib import pyplot as plt
 
 image_name = "setgame1.jpg"
@@ -283,25 +284,39 @@ def parse_card(image,card_contour,index):
 	# Apply mask
 	extracted = mask*shape_color
 
-	red_mean = np.mean(extracted[:,:,2])
-	green_mean = np.mean(extracted[:,:,1])
-	blue_mean = np.mean(extracted[:,:,0])
+	boundaries = [
+	([15, 15, 150], [100, 75, 225]),
+	([15, 90, 15], [100, 225, 100]),
+	([50, 15, 50], [150, 90, 150])]
 
-	print(np.mean(extracted[:,:,0]))
-	print(np.mean(extracted[:,:,1]))
-	print(np.mean(extracted[:,:,2]))
 
-	if(green_mean > red_mean and green_mean > blue_mean):
-		color = Color.GREEN
-	elif(blue_mean > red_mean and blue_mean > green_mean):
-		color = Color.PURPLE
-	elif(red_mean > green_mean and red_mean > blue_mean):
+	color_sums = []
+	for i, (lower, upper) in enumerate(boundaries):
+		# create NumPy arrays from the boundaries
+		lower = np.array(lower, dtype = "uint8")
+		upper = np.array(upper, dtype = "uint8")
+	 
+		# find the colors within the specified boundaries and apply
+		# the mask
+		mask = cv2.inRange(extracted, lower, upper)
+		output = cv2.bitwise_and(extracted, extracted, mask = mask)
+
+		color_sums.append(np.sum(output))
+	 
+		# # show the images
+		# cv2.imshow("images", np.hstack([extracted, output]))
+		# cv2.waitKey(300)
+
+	if(color_sums[0] > color_sums[1] and color_sums[0] > color_sums[2]):
 		color = Color.RED
+	elif(color_sums[1] > color_sums[0] and color_sums[1] > color_sums[2]):
+		color = Color.GREEN
 	else:
-		color = Color.UNKNOWN
+		color = Color.PURPLE
 
 	print(color)
 	cv2.imwrite("card_shape"+index+".png", extracted)
+	print("Card number: ", str(index))
 
 
 	font                   = cv2.FONT_HERSHEY_SIMPLEX
@@ -349,6 +364,15 @@ def parse_card(image,card_contour,index):
 		fontColor,
 		lineType)
 
+	text = "Card number: " + str(index)
+	topLeftCornerOfText    = (x+50,y+250)
+	cv2.putText(image,text, 
+		topLeftCornerOfText, 
+		font, 
+		fontScale,
+		fontColor,
+		lineType)
+
 	cv2.imwrite(card_contour_name, image)
 
 
@@ -356,6 +380,9 @@ def parse_card(image,card_contour,index):
 # training_cards = initialize_training_cards(training_path)
 image = cv2.imread(image_name)
 contour_list = isolate_cards(image, threshold_name, card_contour_name)
+
+image = cv2.imread(image_name)
+parse_card(image,contour_list[11],str(11))
 
 image = cv2.imread(image_name)
 for i in range(len(contour_list)):
