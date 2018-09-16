@@ -255,13 +255,13 @@ def parse_card(image,card_contour,index):
 
 
 	if(len(contour_list) == 1):
-		number = number.ONE
+		number = Number.ONE
 	elif(len(contour_list) == 2):
-		number = number.TWO
+		number = Number.TWO
 	elif(len(contour_list) == 3):
-		number = number.THREE
+		number = Number.THREE
 	else:
-		number = number.UNKNOWN
+		number = Number.UNKNOWN
 
 	fill = shape_fill(contours,hierarchy,contour_indexes)
 
